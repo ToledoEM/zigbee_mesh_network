@@ -1,4 +1,5 @@
-# Zigbee ZHA Mesh Export
+# <img src="logo.png" alt="Logo" width="40" height="40"> Zigbee ZHA Mesh Graph Export
+
 
 Export ZHA devices and neighbor edges from Home Assistant to CSV files.
 
@@ -97,7 +98,6 @@ net.show("zha_mesh.html")
 Open `zha_mesh.html` in a browser.
 
 ## Notes
-- `edges.csv` and `nodes.csv` are generated outputs and are ignored by git.
 - If your HA version doesn’t include `neighbors` in `zha/devices`, `edges.csv` may be empty.
 
 ## License
