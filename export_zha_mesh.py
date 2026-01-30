@@ -81,8 +81,6 @@ async def main():
             "quirk_applied": d.get("quirk_applied"),
             "available": d.get("available"),
             "device_type": d.get("device_type"),   # router/end_device/coordinator (often present)
-            "rssi": d.get("rssi"),
-            "lqi": d.get("lqi"),
             "last_seen": d.get("last_seen"),
             "area_id": d.get("area_id"),
         })

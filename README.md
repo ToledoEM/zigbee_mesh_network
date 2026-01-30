@@ -1,7 +1,14 @@
-# <img src="logo.png" alt="Logo" width="40" height="40"> Zigbee ZHA Mesh Graph Export
+# <img src="img/logo.png" alt="Logo" width="40" height="40"> Zigbee ZHA Mesh Graph Export
 
 
 Export ZHA devices and neighbor edges from Home Assistant to CSV files.
+
+## Original view in home assistant
+![Zigbee mesh in HA](img/zigbee_mesh_web.png)
+
+
+## Exported Graph in Cystoscape
+![Cystoscape view](img/edges.csv.png)
 
 ## Requirements
 - Python 3.10+ (or your system Python that Home Assistant supports)
@@ -49,6 +56,28 @@ Outputs:
 - `nodes.csv`
 - `edges.csv`
 
+## CSV columns
+`nodes.csv`:
+- `id`: Device IEEE address (unique).
+- `label`: Friendly name (user-given name, HA name, or IEEE).
+- `nwk`: Zigbee network address.
+- `manufacturer`: Manufacturer string from ZHA.
+- `model`: Model string from ZHA.
+- `quirk_applied`: Boolean flag when a ZHA quirk is applied.
+- `available`: Boolean availability in Home Assistant.
+- `device_type`: ZHA device type (e.g., router, end_device, coordinator).
+- `last_seen`: Last-seen timestamp from ZHA (if provided).
+- `area_id`: Home Assistant area ID (if assigned).
+
+`edges.csv`:
+- `source`: IEEE address of the reporting device.
+- `target`: IEEE address of the neighbor device.
+- `lqi`: Link Quality Indicator for the neighbor relationship.
+- `rssi`: Received Signal Strength Indicator for the neighbor relationship.
+- `relationship`: ZHA neighbor relationship type.
+- `depth`: Neighbor depth value.
+- `neighbor_device_type`: Neighbor ZHA device type.
+
 ## How it works
 - The script connects to Home Assistant’s WebSocket API at `/api/websocket`.
 - It calls `zha/devices` and builds:
@@ -73,16 +102,26 @@ You can turn the CSVs into a graph in a few ways:
 
 ### Python (NetworkX + PyVis)
 ```bash
-uv pip install networkx pyvis pandas
+uv pip install networkx pyvis pandas jinja2
+```
+
+Generate the interactive HTML:
+
+```bash
+python show_network.py
 ```
 
 ```python
 import pandas as pd
 import networkx as nx
 from pyvis.network import Network
+from pathlib import Path
 
-nodes = pd.read_csv("nodes.csv")
-edges = pd.read_csv("edges.csv")
+base_dir = Path(__file__).resolve().parent
+output_dir = base_dir / "output"
+
+nodes = pd.read_csv(base_dir / "nodes.csv")
+edges = pd.read_csv(base_dir / "edges.csv")
 
 G = nx.from_pandas_edgelist(edges, "source", "target", create_using=nx.DiGraph())
 for _, r in nodes.iterrows():
@@ -92,13 +131,15 @@ for _, r in nodes.iterrows():
 
 net = Network(height="800px", width="100%", directed=True)
 net.from_nx(G)
-net.show("zha_mesh.html")
+output_dir.mkdir(parents=True, exist_ok=True)
+net.show(str(output_dir / "zha_mesh.html"), notebook=False)
 ```
 
-Open `zha_mesh.html` in a browser.
+Open `output/zha_mesh.html` in a browser. Supporting assets are in `output/lib`.
+
 
 ## Notes
 - If your HA version doesn’t include `neighbors` in `zha/devices`, `edges.csv` may be empty.
 
 ## License
-MIT. See `LICENSE`.
+MIT. See `LICENSE`
