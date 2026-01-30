@@ -111,30 +111,6 @@ Generate the interactive HTML:
 python show_network.py
 ```
 
-```python
-import pandas as pd
-import networkx as nx
-from pyvis.network import Network
-from pathlib import Path
-
-base_dir = Path(__file__).resolve().parent
-output_dir = base_dir / "output"
-
-nodes = pd.read_csv(base_dir / "nodes.csv")
-edges = pd.read_csv(base_dir / "edges.csv")
-
-G = nx.from_pandas_edgelist(edges, "source", "target", create_using=nx.DiGraph())
-for _, r in nodes.iterrows():
-    if r["id"] in G:
-        G.nodes[r["id"]]["label"] = r.get("label", r["id"])
-        G.nodes[r["id"]]["device_type"] = r.get("device_type", "")
-
-net = Network(height="800px", width="100%", directed=True)
-net.from_nx(G)
-output_dir.mkdir(parents=True, exist_ok=True)
-net.show(str(output_dir / "zha_mesh.html"), notebook=False)
-```
-
 Open `output/zha_mesh.html` in a browser. Supporting assets are in `output/lib`.
 
 
