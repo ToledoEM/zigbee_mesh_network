@@ -55,6 +55,29 @@ async def main():
     ha = HAWS(HA_URL, token)
     await ha.connect()
 
+    # Optional: device/area registry for HA-friendly names
+    try:
+        device_registry = await ha.call({"type": "config/device_registry/list"})
+    except RuntimeError as e:
+        print("WARN: device registry unavailable:", e)
+        device_registry = []
+    try:
+        area_registry = await ha.call({"type": "config/area_registry/list"})
+    except RuntimeError as e:
+        print("WARN: area registry unavailable:", e)
+        area_registry = []
+
+    area_id_to_name = {a.get("id"): a.get("name") for a in area_registry}
+    # Map IEEE -> device registry entry
+    ieee_to_devreg = {}
+    for dev in device_registry:
+        for ident in dev.get("identifiers", []):
+            # identifiers are tuples like ["zha", "00:11:22:..."]
+            if isinstance(ident, (list, tuple)) and len(ident) == 2:
+                domain, ident_value = ident
+                if domain == "zha":
+                    ieee_to_devreg[ident_value] = dev
+
     # 1) list devices
     # NOTE: In many HA versions, ZHA websocket commands are:
     # - "zha/devices"
@@ -69,12 +92,22 @@ async def main():
 
     for d in devices:
         ieee = d.get("ieee")
-        name = d.get("name") or d.get("user_given_name") or ieee
-        ieee_to_name[ieee] = name
+        zha_name = d.get("name") or d.get("user_given_name") or ieee
+        devreg = ieee_to_devreg.get(ieee, {})
+        ha_name = devreg.get("name_by_user") or devreg.get("name") or devreg.get("name_by_device")
+        ieee_to_name[ieee] = ha_name or zha_name
+
+        ha_area_id = devreg.get("area_id") or d.get("area_id")
+        ha_area_name = area_id_to_name.get(ha_area_id)
 
         node_rows.append({
             "id": ieee,
-            "label": name,
+            "label": ha_name or zha_name,
+            "zha_name": zha_name,
+            "ha_name": ha_name,
+            "ha_name_by_user": devreg.get("name_by_user"),
+            "ha_name_by_device": devreg.get("name_by_device"),
+            "ha_device_id": devreg.get("id"),
             "nwk": d.get("nwk"),
             "manufacturer": d.get("manufacturer"),
             "model": d.get("model"),
@@ -82,7 +115,8 @@ async def main():
             "available": d.get("available"),
             "device_type": d.get("device_type"),   # router/end_device/coordinator (often present)
             "last_seen": d.get("last_seen"),
-            "area_id": d.get("area_id"),
+            "area_id": ha_area_id,
+            "ha_area_name": ha_area_name,
         })
 
     # 2) neighbors -> edges (included per-device in zha/devices)

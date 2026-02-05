@@ -59,7 +59,12 @@ Outputs:
 ## CSV columns
 `nodes.csv`:
 - `id`: Device IEEE address (unique).
-- `label`: Friendly name (user-given name, HA name, or IEEE).
+- `label`: Friendly name (HA device name if available, otherwise ZHA name or IEEE).
+- `zha_name`: Name from ZHA (device `name` or `user_given_name`).
+- `ha_name`: Home Assistant device name (registry), if available.
+- `ha_name_by_user`: User-defined HA device name, if set.
+- `ha_name_by_device`: Device-provided HA name, if set.
+- `ha_device_id`: Home Assistant device registry ID, if available.
 - `nwk`: Zigbee network address.
 - `manufacturer`: Manufacturer string from ZHA.
 - `model`: Model string from ZHA.
@@ -68,6 +73,7 @@ Outputs:
 - `device_type`: ZHA device type (e.g., router, end_device, coordinator).
 - `last_seen`: Last-seen timestamp from ZHA (if provided).
 - `area_id`: Home Assistant area ID (if assigned).
+- `ha_area_name`: Home Assistant area name (if assigned).
 
 `edges.csv`:
 - `source`: IEEE address of the reporting device.
@@ -80,7 +86,7 @@ Outputs:
 
 ## How it works
 - The script connects to Home Assistant’s WebSocket API at `/api/websocket`.
-- It calls `zha/devices` and builds:
+- It calls `zha/devices` plus the HA device and area registries and builds:
   - `nodes.csv` from the device list.
   - `edges.csv` from each device’s `neighbors` list (included in `zha/devices` on HA 2026.1.x).
 - If you need to confirm what the API returns, run:
